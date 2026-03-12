@@ -31,6 +31,16 @@ def create_book():
         return jsonify({"book": book}), 201
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
+    
+@app.route("/books/search", methods=["GET"])
+def search_books_ep():
+    query = request.args.get("q", "").strip()
+    
+    if not query:
+        return jsonify({"error": "Search query is required"}), 400
+    
+    results = search_books(query)
+    return jsonify({"books": results}), 200
 
 # ----- ENDPOINT 3: Get a single book by ID (TODO) -----
 # Route: GET /books/<int:book_id>
@@ -80,6 +90,8 @@ def delete_single_book(book_id):
         return jsonify({"message": "Book deleted"}), 200
     except ValueError as error:
         return jsonify({"error": str(error)}), 404
+    
+
 
 
 

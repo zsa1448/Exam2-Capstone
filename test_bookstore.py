@@ -86,6 +86,7 @@ def test_create_book_invalidprice(client):
     })
 
     assert response.status_code == 400
+    assert "positive" in response.get_json()["error"].lower()
 #
 # GET /books:
 #   - List books when empty (check 200, empty list)
@@ -131,6 +132,7 @@ def test_update_title(client):
     assert response.status_code == 200
     data = response.get_json()
     assert data["book"]["title"] == "Cinderella"
+    assert data["book"]["price"] == 12.99
 
 #   - Update with invalid price (check 400)
 def test_update_invalidprice(client):
@@ -217,8 +219,41 @@ def test_fullworkflow(client):
 #
 # 2. Write 3 integration tests for the search endpoint:
 #    - Search by title (partial match)
+def test_search_by_title(client):
+    # Setup: add a few books
+    create_sample_book(client)
+    #create_sample_book(client, title="Great Expectations", author="Charles Dickens", price=10.00)
+    response = client.get("/books/search?q=great")
+    assert response.status_code == 200
+    data = response.get_json()
+    assert "books" in data
+    assert len(data["books"]) == 1
+    titles = {book["title"] for book in data["books"]}
+    assert "The Great Gatsby" in titles
+    #assert "Great Expectations" in titles
 #    - Search by author (partial match)
+def test_search_by_author(client):
+    # Setup
+    create_sample_book(client)
+    response = client.get("/books/search?q=Scott")
+    assert response.status_code == 200
+    data = response.get_json()
+    assert len(data["books"]) == 1
+    authors = {book["author"] for book in data["books"]}
+    assert "F. Scott Fitzgerald" in authors
+
 #    - Search with no results (empty list)
+def test_search_no_results(client):
+    # Setup: add one unrelated book
+    create_sample_book(client)
+
+    # Search for something that doesn't exist
+    response = client.get("/books/search?q=nonexistentbooklolololo")
+    assert response.status_code == 200
+    data = response.get_json()
+
+    assert "books" in data
+    assert len(data["books"]) == 0
 # ============================================================
 
 
